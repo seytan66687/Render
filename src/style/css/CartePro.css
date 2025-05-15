@@ -1,0 +1,32 @@
+.carte-pro-wrapper {
+  position: relative;
+  height: 100vh;
+}
+
+.side-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 350px;
+  height: 100vh;
+  background-color: #fff;
+  z-index: 99999; /* Increase z-index to ensure it is above all */
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+  overflow-y: auto;
+  transition: transform 0.3s ease-in-out;
+  transform: translateX(0); /* Visible by default */
+}
+
+p {
+  padding: 0;
+}
+
+.close-btn {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+}

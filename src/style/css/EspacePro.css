@@ -1,0 +1,430 @@
+.flex-carte-pro {
+  display: flex;
+  justify-content: start;
+  flex-direction: row-reverse;
+  align-items: center;
+  padding: 40px;
+  gap: 40px;
+}
+
+.fond3-section-pro .event-container .evenement-wrapper {
+  list-style: none;
+  margin-bottom: 70px;
+}
+.fond3-section-pro .event-container .evenement-wrapper .title-event {
+  font-size: 1.5rem;
+  font-weight: 200;
+  margin-bottom: 50px;
+  font-family: "Montserrat";
+  text-decoration: none;
+}
+.fond3-section-pro .event-container .evenement-wrapper .evenement-link {
+  margin-top: 10px;
+  font-family: "Montserrat";
+  display: inline-block;
+  color: #ff4949;
+  text-decoration: none;
+  font-weight: 600;
+}
+.fond3-section-pro .event-container .evenement-wrapper .evenement-container {
+  margin-top: 30px;
+}
+
+.map-edit-pro {
+  border: 1px solid black;
+  position: relative;
+  z-index: 0;
+}
+
+.carte-pro {
+  font-family: "Montaga";
+  font-size: 35px;
+  padding: 80px 30px 0 30px;
+  font-weight: 700;
+}
+
+.fond1-section-pro {
+  background-image: url("../../pages/img/fonds/fond1.png");
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position: left center;
+  background-size: 700px;
+  position: relative;
+  z-index: 0;
+}
+
+.fond2-section-pro {
+  background-image: url("../../pages/img/fonds/fond2.png");
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position: left center;
+  background-size: 700px;
+}
+.fond2-section-pro p {
+  font-size: 0.875rem;
+  padding: 40px 0 0 30px;
+  width: 60%;
+  font-family: "Montserrat";
+}
+
+.fond3-section-pro {
+  background-image: url("../../pages/img/fonds/fond3.png");
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position: left center;
+  padding: 2rem;
+  background-size: 700px;
+  position: relative;
+  z-index: 0;
+}
+.fond3-section-pro .event-container {
+  padding: 50px 30px 0px;
+}
+.fond3-section-pro .event-container .evenement-wrapper {
+  margin-bottom: 0;
+}
+.fond3-section-pro .event-container .evenement-wrapper .evenement-link {
+  margin: 40px auto;
+}
+
+.fond4-section-pro {
+  padding: 2rem;
+  background-size: 700px;
+  position: relative;
+  z-index: 0;
+}
+
+.wrapper-pro {
+  margin-top: 20px;
+}
+.wrapper-pro .fond1-section-pro h2 {
+  font-family: "Montaga";
+  font-size: 35px;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+.wrapper-pro .gauche-pro {
+  padding: 100px 30px;
+}
+.wrapper-pro .gauche-pro h1 {
+  font-family: "Montserrat";
+  font-size: 15px;
+  margin-bottom: 20px;
+}
+.wrapper-pro .gauche-pro p {
+  font-family: "Montserrat";
+  color: #4b5563;
+  font-size: 0.875rem;
+  width: 100%;
+}
+
+.filtres-container-pro {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 300px;
+  margin-top: 40px;
+  margin-bottom: 40px;
+}
+
+.move {
+  position: relative;
+  left: 0.5rem;
+}
+
+.move-pro {
+  position: relative;
+  left: 1.5rem;
+}
+
+.hero-content-pro {
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  top: 50%;
+  left: 49%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  z-index: 1;
+}
+
+.event-container {
+  padding: 50px 30px;
+  /* Responsive - ajustement si besoin en paysage/tablette */
+}
+.event-container span {
+  margin-bottom: 20px;
+}
+.event-container h1 {
+  font-family: "Montserrat";
+  font-size: 15px;
+  margin-bottom: 20px;
+}
+.event-container .title-event {
+  font-size: 20px;
+}
+.event-container .titre-event-pro {
+  font-size: 35px;
+  font-family: "Montaga";
+  margin-bottom: 40px;
+}
+.event-container .evenement-container {
+  border: 2px solid #000;
+  padding: 30px;
+  margin-bottom: 20px;
+  font-family: "Montserrat";
+  font-size: 14px;
+  background-color: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.event-container .evenement-tag {
+  background-color: rgba(102, 255, 158, 0.6039215686);
+  padding: 10px 8px;
+  display: inline-block;
+  font-weight: bold;
+}
+.event-container .evenement-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.event-container .evenement-link {
+  margin-top: 10px;
+  color: #ff4949;
+  text-decoration: none;
+  display: inline-block;
+}
+@media (min-width: 600px) {
+  .event-container .evenement-details {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  .fond2-section-pro p {
+    font-size: 20px;
+    padding: 50px 0 0 50px;
+    width: 60%;
+    font-family: "Montserrat";
+  }
+  .fond1-section-pro {
+    background-image: url("../../pages/img/fonds/fond1.png");
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-position: left center;
+    background-size: 700px;
+    position: relative;
+    z-index: 0;
+  }
+  .filtres-container-pro {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem 5rem !important;
+    max-width: 600px;
+    margin-top: 40px;
+    margin-bottom: 40px !important;
+  }
+  .flex-carte-pro {
+    align-items: flex-start;
+    padding: 50px;
+    padding-bottom: 100px;
+  }
+  .wrapper-pro .gauche-pro {
+    background-color: white;
+    padding: 50px 30px;
+    margin-top: 20px;
+  }
+  .wrapper-pro .gauche-pro h2 {
+    font-family: "Montaga";
+    font-size: 45px;
+    font-weight: 700;
+    margin-bottom: 1rem;
+  }
+  .wrapper-pro .gauche-pro h1 {
+    font-family: "Montserrat";
+    font-size: 20px;
+    margin-bottom: 20px;
+  }
+  .wrapper-pro .gauche-pro p {
+    font-family: "Montserrat";
+    color: #4b5563;
+    font-size: 20px;
+    width: 60%;
+  }
+  .carte-pro {
+    font-size: 45px;
+    width: 70%;
+    padding: 50px 0 0px 50px;
+  }
+  .event-container {
+    padding: 50px 30px;
+  }
+  .event-container span {
+    margin-bottom: 20px;
+  }
+  .event-container h1 {
+    font-family: "Montserrat";
+    font-size: 20px;
+    margin-bottom: 20px;
+  }
+  .event-container .title-event {
+    font-size: 45px;
+  }
+  .event-container .titre-event-pro {
+    font-size: 45px;
+    font-family: "Montaga";
+    margin-bottom: 40px;
+  }
+  .event-container .evenement-container {
+    border: 2px solid #000;
+    padding: 30px;
+    margin-bottom: 20px;
+    font-family: "Montserrat";
+    font-size: 20px;
+    background-color: #fff;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .event-container .evenement-tag {
+    background-color: rgba(102, 255, 158, 0.6039215686);
+    padding: 10px 8px;
+    display: inline-block;
+    width: auto;
+    font-weight: bold;
+  }
+  .event-container .evenement-details {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  .event-container .evenement-link {
+    margin-top: 10px;
+    color: #ff4949;
+    text-decoration: none;
+    display: inline-block;
+  }
+}
+@media (min-width: 1025px) {
+  .fond2-section-pro .side-panel h2 {
+    margin-bottom: 40px;
+  }
+  .fond2-section-pro .side-panel p {
+    padding: 0;
+  }
+  .fond2-section-pro p {
+    font-size: 1rem;
+    padding: 0 0 0 70px;
+    width: 60%;
+    font-family: "Montserrat";
+  }
+  .flex-carte-pro {
+    display: flex !important;
+    justify-content: start;
+    flex-direction: row-reverse !important;
+    align-items: center;
+    padding: 70px;
+    gap: 70px;
+  }
+  .carte-pro {
+    font-size: 45px;
+    padding: 70px;
+  }
+  .wrapper-pro .fond1-section-pro {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    align-items: center;
+    justify-items: end;
+    padding: 70px;
+    margin: 80px 0px auto;
+    background: url("../../pages/img/fonds/fond1.png") no-repeat left center;
+    background-size: contain;
+    gap: 5rem;
+  }
+  .wrapper-pro .gauche-pro {
+    padding: 0;
+  }
+  .wrapper-pro .gauche-pro h1 {
+    font-family: "Montserrat";
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: #333;
+  }
+  .wrapper-pro .gauche-pro h2 {
+    font-family: "Montaga";
+    font-size: 3.4rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    width: 200%;
+  }
+  .wrapper-pro .gauche-pro p {
+    font-family: "Montserrat";
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #4b5563;
+    width: 90%;
+    margin-bottom: 20px;
+  }
+  .fond3-section-pro .event-container {
+    padding: 50px 30px 0 30px;
+  }
+  .fond3-section-pro .event-container h1 {
+    font-family: "Montserrat";
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+  }
+  .fond3-section-pro .event-container .titre-event-pro {
+    font-size: 3.4rem;
+    font-family: "Montaga";
+    margin-bottom: 40px;
+  }
+  .fond3-section-pro .event-container .evenement-wrapper {
+    list-style: none;
+    margin-bottom: 70px;
+  }
+  .fond3-section-pro .event-container .evenement-wrapper .title-event {
+    font-size: 1.5rem;
+    font-weight: 200;
+    margin-bottom: 50px;
+    font-family: "Montserrat";
+    text-decoration: none;
+  }
+  .fond3-section-pro .event-container .evenement-wrapper .evenement-container {
+    border: 2px solid #000;
+    padding: 20px;
+    margin-top: 30px;
+    background-color: #fff;
+    font-family: "Montserrat";
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-direction: row;
+    gap: 10px;
+  }
+  .fond3-section-pro .event-container .evenement-wrapper .evenement-link {
+    margin-top: 10px;
+    font-family: "Montserrat";
+    display: inline-block;
+    color: #ff4949;
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .fond3-section-pro .event-container .evenement-wrapper .evenement-tag {
+    width: auto;
+  }
+  .fond3-section-pro .event-container .evenement-wrapper span {
+    width: 33%;
+  }
+  .fond3-section-pro .event-container .evenement-wrapper .desc {
+    width: 70%;
+  }
+}
+
+/*# sourceMappingURL=EspacePro.css.map */

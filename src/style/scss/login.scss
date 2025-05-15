@@ -1,0 +1,70 @@
+@use "sass:color";
+
+// login.scss
+
+$form-bg: #fdfaf6;
+$wine-red: #7b2e2e;
+$vine-green: #4d6b3c;
+$border-color: #ccc;
+$input-bg: #fff;
+$font-stack: "Georgia", serif;
+
+.login-form {
+  max-width: 400px;
+  margin: 60px auto;
+  padding: 40px;
+  background-color: $form-bg;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  font-family: $font-stack;
+
+  h2 {
+    text-align: center;
+    color: $wine-red;
+    margin-bottom: 30px;
+    font-size: 1.8rem;
+  }
+
+  input {
+    width: 100%;
+    padding: 12px 15px;
+    margin-bottom: 20px;
+    border: 1px solid $border-color;
+    border-radius: 8px;
+    background-color: $input-bg;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+
+    &:focus {
+      outline: none;
+      border-color: $vine-green;
+    }
+  }
+
+  button {
+    width: 100%;
+    padding: 12px 15px;
+    background-color: $vine-green;
+    color: #fff;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
+
+    &:hover {
+      background-color: color.adjust($vine-green, $lightness: -10%);
+    }
+  }
+
+  p {
+    text-align: center;
+    font-size: 0.9rem;
+
+    &.error {
+      color: $wine-red;
+      margin-top: 15px;
+    }
+  }
+}

@@ -1,0 +1,151 @@
+.documents-techniques {
+  position: relative;
+  z-index: 0;
+  padding: 1rem;
+  font-family: "Montserrat";
+  padding: 100px 30px;
+
+  h2 {
+    font-size: 35px;
+    font-family: "Montaga";
+    margin-bottom: 40px;
+  }
+  .arrow2 {
+    width: 20px;
+    position: relative;
+    left: 10px;
+  }
+
+  ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+
+    .doc-item {
+      display: flex;
+      align-items: flex-start;
+      background: #fff;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-left: 2px dashed #999;
+      border-radius: 8px;
+      gap: 1rem;
+
+      .icon {
+        font-size: 1.5rem;
+        color: #333;
+        flex-shrink: 0;
+      }
+
+      .text {
+        flex: 1;
+
+        h3 {
+          font-size: 1rem;
+          margin: 0 0 0.5rem;
+          color: #111;
+        }
+
+        p {
+          font-size: 0.85rem;
+          margin: 0;
+          color: #666;
+        }
+      }
+
+      .arrow {
+        font-size: 0.9rem;
+        color: #333;
+        margin-top: 0.2rem;
+      }
+    }
+  }
+}
+
+// tablette version
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  .documents-techniques {
+    z-index: 0;
+    h2 {
+      font-size: 45px;
+      font-family: "Montaga";
+      margin-bottom: 40px;
+    }
+    .arrow2 {
+      width: 20px;
+      position: relative;
+      left: 10px;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+
+      .doc-item {
+        display: flex;
+        align-items: center;
+        background: #fff;
+        padding: 1rem;
+        margin-bottom: 3rem;
+        border-left: 2px dashed #999;
+        border-radius: 8px;
+        gap: 1rem;
+
+        .icon {
+          font-size: 2.5rem;
+          color: #333;
+          flex-shrink: 0;
+        }
+
+        .text {
+          flex: 1;
+
+          h3 {
+            font-size: 25px;
+            margin: 0 0 0.5rem;
+            color: #111;
+          }
+
+          p {
+            font-size: 20px;
+            margin: 0;
+            color: #666;
+          }
+        }
+
+        .arrow {
+          font-size: 0.9rem;
+          color: #333;
+          margin-top: 0.2rem;
+        }
+      }
+    }
+  }
+}
+
+@media (min-width: 1025px) {
+  .documents-techniques {
+    z-index: 0;
+    padding: 70px;
+    h2 {
+      font-size: 3.4rem;
+      margin-bottom: 40px;
+    }
+    ul {
+      .doc-item {
+        align-items: center;
+        margin-bottom: 50px;
+        .text {
+          p {
+            font-size: 1rem;
+          }
+          h3 {
+            font-size: 1.5rem;
+          }
+        }
+      }
+    }
+  }
+}

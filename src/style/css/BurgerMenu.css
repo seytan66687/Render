@@ -1,0 +1,92 @@
+.burger-toggle {
+  height: 22px;
+  width: 32px;
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+}
+.burger-toggle span {
+  height: 2px;
+  background: #ffffff;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+.burger-toggle.open span:nth-child(1) {
+  transform: rotate(45deg) translate(6px, 6px);
+}
+.burger-toggle.open span:nth-child(2) {
+  opacity: 0;
+}
+.burger-toggle.open span:nth-child(3) {
+  transform: rotate(-45deg) translate(8px, -8px);
+}
+
+.burger-toggle.black span {
+  background: #000;
+}
+
+.burger-overlay.white {
+  background: white;
+  backdrop-filter: none;
+}
+
+.burger-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 100vw;
+  z-index: 1100;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.burger-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.burger-panel.left {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  z-index: 10;
+}
+
+.burger-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+}
+.burger-links li {
+  margin: 1rem 0;
+}
+.burger-links li a {
+  font-family: "Montserrat", sans-serif;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #5f8e75;
+  text-decoration: none;
+  display: inline-block;
+  transition: color 0.2s ease;
+}
+.burger-links li a:hover {
+  color: #0056b3;
+}
+.burger-links li a.btn-acces {
+  background-color: #5f8e75;
+  color: white;
+  padding: 0.6rem 1.2rem;
+  margin-top: 1.5rem;
+  display: inline-block;
+}
+
+/*# sourceMappingURL=BurgerMenu.css.map */

@@ -24,6 +24,13 @@ const checkAuth = (req, res, next) => {
   next();
 };
 
+app.use(
+  cors({
+    origin: "https://render-front-6lwn.onrender.com", // ou "*" en dev
+    allowedHeaders: ["Content-Type", "Authorization"], // autorise Authorization ici
+  })
+);
+
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY

@@ -16,7 +16,7 @@ const checkAuth = (req, res, next) => {
 
   if (
     !req.headers.authorization ||
-    req.headers.authorization !== `Bearer ${process.env.API_SECRET}`
+    req.headers.authorization !== `Bearer ${process.env.VITE_API_SECRET}`
   ) {
     return res.status(403).json({ error: "Accès refusé" });
   }
@@ -24,12 +24,13 @@ const checkAuth = (req, res, next) => {
   next();
 };
 
-app.use(
-  cors({
-    origin: "https://render-front-6lwn.onrender.com", // ou "*" en dev
-    allowedHeaders: ["Content-Type", "Authorization"], // autorise Authorization ici
-  })
-);
+const corsOptions = {
+  origin: "*", // ou l'URL de ton frontend en prod
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"], // <- autoriser Authorization !
+};
+
+app.use(cors(corsOptions));
 
 const supabase = createClient(
   process.env.SUPABASE_URL,

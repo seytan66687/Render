@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "leaflet/dist/leaflet.css";
 import { Link } from "react-router-dom";
-import supabase from "../supabaseClient";
+import supabase from "../supaBaseClient";
 import CarteVignerons from "../components/CarteVignerons";
 import "../style/scss/Accueil.scss";
 import "../style/css/style.css";

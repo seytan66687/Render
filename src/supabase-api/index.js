@@ -506,6 +506,38 @@ app.post("/api/import-domaines", upload.single("file"), async (req, res) => {
       .from("domaines_viticoles")
       .upsert(uniquesParNom, { onConflict: ["nom"] });
 
+    // Supprimer les domaines absents du fichier importé
+    const nomsDansExcel = uniquesParNom.map((d) => d.nom).filter(Boolean);
+
+    const { data: allDomaines, error: fetchError } = await supabase
+      .from("domaines_viticoles")
+      .select("nom");
+
+    if (fetchError) {
+      console.error(
+        "Erreur lors de la récupération des domaines :",
+        fetchError
+      );
+      throw new Error(fetchError.message);
+    }
+
+    const nomsDansBase = allDomaines.map((d) => d.nom);
+    const nomsASupprimer = nomsDansBase.filter(
+      (nom) => !nomsDansExcel.includes(nom)
+    );
+
+    if (nomsASupprimer.length > 0) {
+      const { error: deleteError } = await supabase
+        .from("domaines_viticoles")
+        .delete()
+        .in("nom", nomsASupprimer);
+
+      if (deleteError) {
+        console.error("Erreur lors de la suppression :", deleteError);
+        throw new Error(deleteError.message);
+      }
+    }
+
     if (upsertError) {
       console.error("Erreur lors de l'upsert :", upsertError);
       throw new Error(upsertError.message);
@@ -715,10 +747,14 @@ app.post("/api/articles", upload.single("image"), async (req, res) => {
 app.use("/uploads", express.static(uploadsDir));
 
 // 📌 Route pour upload avec vérification de req.file
-app.post("/upload", upload.single("image"), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: "Aucun fichier téléchargé." });
+app.post(
+  "/api/uploads",
+  upload.single("image"),
+  (req: express.Request, res: express.Response) => {
+    if (!req.file) {
+      return res.status(400).json({ error: "Aucun fichier téléchargé." });
+    }
+    const imageUrl = `https://render-pfyp.onrender.com/uploads/${req.file.filename}`;
+    res.json({ imageUrl });
   }
-  const imageUrl = `https://render-pfyp.onrender.com/uploads/${req.file.filename}`;
-  res.json({ imageUrl });
-});
+);

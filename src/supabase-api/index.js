@@ -3,88 +3,50 @@ const cors = require("cors");
 const multer = require("multer");
 const fs = require("fs");
 const xlsx = require("xlsx");
-require("dotenv").config();
-
 const path = require("path");
 const { createClient } = require("@supabase/supabase-js");
 require("dotenv").config();
 
 const app = express();
+app.use(cors());
+app.use(express.json());
 
-// Vérification des variables d'environnement
-if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-  throw new Error(
-    "Les variables d'environnement SUPABASE_URL et SUPABASE_SERVICE_ROLE_KEY doivent être définies."
-  );
-}
+const checkAuth = (req, res, next) => {
+  console.log("Auth header reçu :", req.headers.authorization);
+
+  if (
+    !req.headers.authorization ||
+    req.headers.authorization !== `Bearer ${process.env.API_SECRET}`
+  ) {
+    return res.status(403).json({ error: "Accès refusé" });
+  }
+
+  next();
+};
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// ✅ Middleware CORS à appliquer AVANT tes routes
-app.use(
-  cors({
-    origin: "*", // ton frontend Render
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
-  })
-);
+// 📁 Servir les fichiers localement
+app.use("/uploads", checkAuth, express.static(path.join(__dirname, "uploads")));
 
-// ✅ Middleware pour accepter le JSON
-app.use(express.json());
-
-const uploadsDir = path.join(__dirname, "uploads");
-
-// Créer le dossier s'il n'existe pas
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-// Configuration de Multer
+// 📤 Config upload local
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadsDir),
+  destination: (req, file, cb) => cb(null, "uploads"),
   filename: (req, file, cb) => cb(null, `${Date.now()}_${file.originalname}`),
 });
 const upload = multer({ storage });
 
-// Servir les fichiers statiques
-app.use("/uploads", express.static(uploadsDir));
-// Exemple de route pour test
-app.get("/", (req, res) => {
-  res.send("API en ligne !");
-});
-
-// Middleware pour servir les fichiers statiques du frontend React
-app.use(express.static(path.join(__dirname, "client/build")));
-
-// Redirige toutes les requêtes autres que celles des API vers index.html
-app.get("/*", (req, res, next) => {
-  const apiRoutes = ["/api", "/uploads", "/download"];
-  if (apiRoutes.some((route) => req.path.startsWith(route))) {
-    return next(); // Passe au middleware suivant pour les routes API
-  }
-  res.sendFile(path.join(__dirname, "client/build", "index.html"));
-});
-
-// Tes autres routes ici...
-// app.get("/api/domaines", ...)
-
-// ✅ Lancement du serveur
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 API démarrée sur https://render-front-mjmf.onrender.com`);
-});
-
 // ✅ Créer un utilisateur unique
-app.post("/api/create-user", async (req, res) => {
+app.post("/api/create-user", checkAuth, async (req, res) => {
   const { email, password, role, username } = req.body;
 
   console.log("📥 Données reçues :", { email, password, role, username });
 
   if (!email || !password || !role || !username) {
+    return res.status(400).json({ error: "Tous les champs sont requis." });
   }
 
   const { data: user, error } = await supabase.auth.admin.createUser({
@@ -112,7 +74,7 @@ app.post("/api/create-user", async (req, res) => {
 });
 
 // 🔄 Supprimer les vignerons absents du fichier
-app.post("/api/sync-vignerons", async (req, res) => {
+app.post("/api/sync-vignerons", checkAuth, async (req, res) => {
   const { emailsToKeep } = req.body;
 
   if (!Array.isArray(emailsToKeep)) {
@@ -176,7 +138,7 @@ app.post("/api/sync-vignerons", async (req, res) => {
 });
 
 // 🧩 Import de masse + synchronisation
-app.post("/api/import-users", async (req, res) => {
+app.post("/api/import-users", checkAuth, async (req, res) => {
   const { users, emailsToKeep } = req.body;
 
   if (!Array.isArray(users) || !Array.isArray(emailsToKeep)) {
@@ -278,7 +240,7 @@ app.post("/api/import-users", async (req, res) => {
   }
 });
 
-app.get("/api/users", async (req, res) => {
+app.get("/api/users", checkAuth, async (req, res) => {
   const accessToken = req.headers.authorization?.split(" ")[1];
 
   if (!accessToken) {
@@ -327,7 +289,7 @@ app.get("/api/users", async (req, res) => {
 
 // suppr un user
 
-app.delete("/api/users/:id", async (req, res) => {
+app.delete("/api/users/:id", checkAuth, async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -353,7 +315,7 @@ app.delete("/api/users/:id", async (req, res) => {
 // modif un user
 
 // MODIFIE UN UTILISATEUR
-app.put("/api/users/:id", async (req, res) => {
+app.put("/api/users/:id", checkAuth, async (req, res) => {
   const { id } = req.params;
   const { username, email, password } = req.body;
 
@@ -377,7 +339,7 @@ app.put("/api/users/:id", async (req, res) => {
   res.json({ success: true });
 });
 
-app.get("/api/users/:id", async (req, res) => {
+app.get("/api/users/:id", checkAuth, async (req, res) => {
   const { id } = req.params;
   console.log("🔍 ID reçu:", id);
 
@@ -397,40 +359,45 @@ app.get("/api/users/:id", async (req, res) => {
 
 // ajouter des doc tech
 
-app.post("/api/add-document", upload.single("file"), async (req, res) => {
-  const { titre, description, date_publication } = req.body;
-  const file = req.file;
+app.post(
+  "/api/add-document",
+  checkAuth,
+  upload.single("file"),
+  async (req, res) => {
+    const { titre, description, date_publication } = req.body;
+    const file = req.file;
 
-  if (!titre || !date_publication || !file) {
-    return res.status(400).json({ error: "Champs requis manquants." });
-  }
-
-  // 🔗 Lien local vers le fichier
-  const file_url = `https://render-front-6lwn.onrender.com/uploads/${file.filename}`;
-
-  try {
-    const { error } = await supabase.from("documents").insert([
-      {
-        titre,
-        description,
-        date_publication,
-        file_url, // ✅ On garde le nom correct de la colonne
-      },
-    ]);
-
-    if (error) {
-      console.error("❌ Erreur insert document :", error.message);
-      return res.status(500).json({ error: error.message });
+    if (!titre || !date_publication || !file) {
+      return res.status(400).json({ error: "Champs requis manquants." });
     }
 
-    res.json({ success: true });
-  } catch (err) {
-    console.error("❌ Erreur serveur API /api/add-document :", err.message);
-    res.status(500).json({ error: err.message });
-  }
-});
+    // 🔗 Lien local vers le fichier
+    const file_url = `http://localhost:3001/uploads/${file.filename}`;
 
-app.get("/api/documents", async (req, res) => {
+    try {
+      const { error } = await supabase.from("documents").insert([
+        {
+          titre,
+          description,
+          date_publication,
+          file_url, // ✅ On garde le nom correct de la colonne
+        },
+      ]);
+
+      if (error) {
+        console.error("❌ Erreur insert document :", error.message);
+        return res.status(500).json({ error: error.message });
+      }
+
+      res.json({ success: true });
+    } catch (err) {
+      console.error("❌ Erreur serveur API /api/add-document :", err.message);
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+app.get("/api/documents", checkAuth, async (req, res) => {
   try {
     const { data, error } = await supabase
       .from("documents") // ou documents_techniques selon ta table
@@ -449,9 +416,9 @@ app.get("/api/documents", async (req, res) => {
   }
 });
 
-app.get("/download/:filename", (req, res) => {
+app.get("/download/:filename", checkAuth, (req, res) => {
   const filename = req.params.filename;
-  const filePath = path.join(uploadsDir, filename);
+  const filePath = path.join(__dirname, "uploads", filename);
 
   if (fs.existsSync(filePath)) {
     return res.download(filePath); // 📥 Force le téléchargement
@@ -643,7 +610,7 @@ app.delete("/api/evenements/:id", async (req, res) => {
 });
 
 // 📌 Liste des domaines viticoles
-app.get("/api/domaines", async (req, res) => {
+app.get("/api/domaines", checkAuth, async (req, res) => {
   try {
     const { data, error } = await supabase
       .from("domaines_viticoles")
@@ -707,47 +674,50 @@ app.delete("/api/documents/:id", async (req, res) => {
 });
 
 // 📌 Ajouter une actualité avec image
-app.post("/api/articles", upload.single("image"), async (req, res) => {
-  const { titre, description, contenu } = req.body;
-  const file = req.file;
+app.post(
+  "/api/articles",
+  checkAuth,
+  upload.single("image"),
+  async (req, res) => {
+    const { titre, description, contenu } = req.body;
+    const file = req.file;
 
-  if (!titre || !description || !contenu || !file) {
-    return res.status(400).json({ error: "Tous les champs sont requis." });
-  }
-
-  // Chemin d'accès à l'image stockée localement
-  const image_url = `https://render-pfyp.onrender.com/uploads/${file.filename}`;
-
-  try {
-    const { error } = await supabase.from("fil_actualite").insert([
-      {
-        titre,
-        description,
-        contenu,
-        image_url,
-      },
-    ]);
-
-    if (error) {
-      console.error("❌ Erreur insertion actualité :", error.message);
-      return res.status(500).json({ error: error.message });
+    if (!titre || !description || !contenu || !file) {
+      return res.status(400).json({ error: "Tous les champs sont requis." });
     }
 
-    res.json({ success: true });
-  } catch (err) {
-    console.error("❌ Erreur serveur /api/articles :", err.message);
-    res.status(500).json({ error: err.message });
+    // Chemin d'accès à l'image stockée localement
+    const image_url = `http://localhost:3001/uploads/${file.filename}`;
+
+    try {
+      const { error } = await supabase.from("fil_actualite").insert([
+        {
+          titre,
+          description,
+          contenu,
+          image_url,
+        },
+      ]);
+
+      if (error) {
+        console.error("❌ Erreur insertion actualité :", error.message);
+        return res.status(500).json({ error: error.message });
+      }
+
+      res.json({ success: true });
+    } catch (err) {
+      console.error("❌ Erreur serveur /api/articles :", err.message);
+      res.status(500).json({ error: err.message });
+    }
   }
+);
+
+app.post("/upload", checkAuth, upload.single("image"), (req, res) => {
+  const imageUrl = `http://localhost:3001/uploads/${req.file.filename}`;
+  res.json({ imageUrl });
 });
 
-// Serve les fichiers du dossier 'uploads' en tant que fichiers statiques
-app.use("/uploads", express.static(uploadsDir));
-
-// 📌 Route pour upload avec vérification de req.file
-app.post("/api/uploads", upload.single("image"), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: "Aucun fichier téléchargé." });
-  }
-  const imageUrl = `https://render-pfyp.onrender.com/uploads/${req.file.filename}`;
-  res.json({ imageUrl });
+// 🚀 Lancer le serveur
+app.listen(3001, () => {
+  console.log("🚀 API démarrée sur http://localhost:3001");
 });

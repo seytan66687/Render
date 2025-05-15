@@ -38,11 +38,7 @@ const Navbar = () => {
 
         <div className="navbar-logo move-pro">
           <img
-            src={
-              isScrolled
-                ? "../../src/pages/img/logo.png"
-                : "../../src/pages/img/logowhite.png"
-            }
+            src={isScrolled ? "./img/logo.png" : "./img/logowhite.png"}
             alt="Logo"
           />
         </div>

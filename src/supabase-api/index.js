@@ -25,7 +25,7 @@ const checkAuth = (req, res, next) => {
 };
 
 const corsOptions = {
-  origin: "*", // ou l'URL de ton frontend en prod
+  origin: "https://render-front-6lwn.onrender.com", // ou l'URL de ton frontend en prod
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"], // <- autoriser Authorization !
 };

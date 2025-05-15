@@ -506,37 +506,113 @@ app.post("/api/import-domaines", upload.single("file"), async (req, res) => {
       .from("domaines_viticoles")
       .upsert(uniquesParNom, { onConflict: ["nom"] });
 
-    // Supprimer les domaines absents du fichier importé
-    const nomsDansExcel = uniquesParNom.map((d) => d.nom).filter(Boolean);
+    app.post(
+      "/api/import-domaines",
+      upload.single("file"),
+      async (req, res) => {
+        try {
+          console.log("Fichier reçu :", req.file);
 
-    const { data: allDomaines, error: fetchError } = await supabase
-      .from("domaines_viticoles")
-      .select("nom");
+          const workbook = xlsx.readFile(req.file.path);
+          const sheet = workbook.Sheets[workbook.SheetNames[0]];
+          const domaines = xlsx.utils.sheet_to_json(sheet);
 
-    if (fetchError) {
-      console.error(
-        "Erreur lors de la récupération des domaines :",
-        fetchError
-      );
-      throw new Error(fetchError.message);
-    }
+          console.log("Données extraites du fichier :", domaines);
 
-    const nomsDansBase = allDomaines.map((d) => d.nom);
-    const nomsASupprimer = nomsDansBase.filter(
-      (nom) => !nomsDansExcel.includes(nom)
-    );
+          // Formatage des données
+          const formatted = domaines.map((row) => ({
+            nom: row.nom || null,
+            description: row.description || null,
+            adresse: row.adresse || null,
+            certification: row.certification || null,
+            ville: row.ville || null,
+            lat: row.lat ? parseFloat(row.lat) : null,
+            lon: row.lon ? parseFloat(row.lon) : null,
+            telephone: row.telephone || null,
+            email: row.email || null,
+            appellation: row.appellation || null,
+            commune: row.commune || null,
+            type_vigne: row.type_vigne || null,
+            variete: row.variete || null,
+            nature_vin: row.nature_vin || null,
+          }));
 
-    if (nomsASupprimer.length > 0) {
-      const { error: deleteError } = await supabase
-        .from("domaines_viticoles")
-        .delete()
-        .in("nom", nomsASupprimer);
+          console.log("Données formatées :", formatted);
 
-      if (deleteError) {
-        console.error("Erreur lors de la suppression :", deleteError);
-        throw new Error(deleteError.message);
+          // Filtrer les lignes où tous les champs sont nuls
+          const filteredFormatted = formatted.filter((row) =>
+            Object.values(row).some((value) => value !== null && value !== "")
+          );
+
+          console.log("Données après filtrage :", filteredFormatted);
+
+          const uniquesParNom = Array.from(
+            new Map(filteredFormatted.map((d) => [d.nom, d])).values()
+          );
+
+          // Upsert vers Supabase
+          const { error: upsertError } = await supabase
+            .from("domaines_viticoles")
+            .upsert(uniquesParNom, { onConflict: ["nom"] });
+
+          // Supprimer les domaines absents du fichier importé
+          const nomsDansExcel = uniquesParNom.map((d) => d.nom).filter(Boolean);
+
+          const { data: allDomaines, error: fetchError } = await supabase
+            .from("domaines_viticoles")
+            .select("nom");
+
+          if (fetchError) {
+            console.error(
+              "Erreur lors de la récupération des domaines :",
+              fetchError
+            );
+            throw new Error(fetchError.message);
+          }
+
+          const nomsDansBase = allDomaines.map((d) => d.nom);
+          const nomsASupprimer = nomsDansBase.filter(
+            (nom) => !nomsDansExcel.includes(nom)
+          );
+
+          if (nomsASupprimer.length > 0) {
+            const { error: deleteError } = await supabase
+              .from("domaines_viticoles")
+              .delete()
+              .in("nom", nomsASupprimer);
+
+            if (deleteError) {
+              console.error("Erreur lors de la suppression :", deleteError);
+              throw new Error(deleteError.message);
+            }
+          }
+
+          if (upsertError) {
+            console.error("Erreur lors de l'upsert :", upsertError);
+            throw new Error(upsertError.message);
+          }
+
+          res.json({
+            success: true,
+            imported: uniquesParNom.length,
+          });
+        } catch (err) {
+          console.error("Erreur serveur :", err.message);
+          res
+            .status(500)
+            .json({ error: "Erreur lors de l'import : " + err.message });
+        } finally {
+          try {
+            fs.unlinkSync(req.file.path); // Nettoyage du fichier temporaire
+          } catch (err) {
+            console.warn(
+              "⚠️ Impossible de supprimer le fichier temporaire :",
+              err.message
+            );
+          }
+        }
       }
-    }
+    );
 
     if (upsertError) {
       console.error("Erreur lors de l'upsert :", upsertError);

@@ -372,7 +372,7 @@ app.post(
     }
 
     // 🔗 Lien local vers le fichier
-    const file_url = `http://localhost:3001/uploads/${file.filename}`;
+    const file_url = `https://render-pfyp.onrender.com/uploads/${file.filename}`;
 
     try {
       const { error } = await supabase.from("documents").insert([
@@ -687,7 +687,7 @@ app.post(
     }
 
     // Chemin d'accès à l'image stockée localement
-    const image_url = `http://localhost:3001/uploads/${file.filename}`;
+    const image_url = `https://render-pfyp.onrender.com/uploads/${file.filename}`;
 
     try {
       const { error } = await supabase.from("fil_actualite").insert([
@@ -713,11 +713,11 @@ app.post(
 );
 
 app.post("/upload", checkAuth, upload.single("image"), (req, res) => {
-  const imageUrl = `http://localhost:3001/uploads/${req.file.filename}`;
+  const imageUrl = `https://render-pfyp.onrender.com/uploads/${req.file.filename}`;
   res.json({ imageUrl });
 });
 
 // 🚀 Lancer le serveur
 app.listen(3001, () => {
-  console.log("🚀 API démarrée sur http://localhost:3001");
+  console.log("🚀 API démarrée sur https://render-pfyp.onrender.com");
 });

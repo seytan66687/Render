@@ -470,170 +470,91 @@ app.post("/api/import-domaines", upload.single("file"), async (req, res) => {
 
     console.log("Données extraites du fichier :", domaines);
 
-    // Formatage des données
-    const formatted = domaines.map((row) => ({
-      nom: row.nom || null,
-      description: row.description || null,
-      adresse: row.adresse || null,
-      certification: row.certification || null,
-      ville: row.ville || null,
-      lat: row.lat ? parseFloat(row.lat) : null,
-      lon: row.lon ? parseFloat(row.lon) : null,
-      telephone: row.telephone || null,
-      email: row.email || null,
-      appellation: row.appellation || null,
-      commune: row.commune || null,
-      type_vigne: row.type_vigne || null,
-      variete: row.variete || null,
-      nature_vin: row.nature_vin || null,
-    }));
+    // Formatage et normalisation
+    const formatted = domaines
+      .map((row) => {
+        const nom = row.nom?.trim().toLowerCase(); // clé unique normalisée
+        return {
+          nom: nom || null,
+          description: row.description || null,
+          adresse: row.adresse || null,
+          certification: row.certification || null,
+          ville: row.ville || null,
+          lat: row.lat ? parseFloat(row.lat) : null,
+          lon: row.lon ? parseFloat(row.lon) : null,
+          telephone: row.telephone || null,
+          email: row.email || null,
+          appellation: row.appellation || null,
+          commune: row.commune || null,
+          type_vigne: row.type_vigne || null,
+          variete: row.variete || null,
+          nature_vin: row.nature_vin || null,
+        };
+      })
+      .filter((row) =>
+        Object.values(row).some((value) => value !== null && value !== "")
+      ) // éliminer les lignes vides
+      .filter((row) => row.nom); // éliminer les lignes sans nom
 
-    console.log("Données formatées :", formatted);
-
-    // Filtrer les lignes où tous les champs sont nuls
-    const filteredFormatted = formatted.filter((row) =>
-      Object.values(row).some((value) => value !== null && value !== "")
-    );
-
-    console.log("Données après filtrage :", filteredFormatted);
-
+    // Suppression des doublons (nom unique)
     const uniquesParNom = Array.from(
-      new Map(filteredFormatted.map((d) => [d.nom, d])).values()
+      new Map(formatted.map((d) => [d.nom, d])).values()
     );
 
-    // Upsert vers Supabase
+    console.log("Données après nettoyage :", uniquesParNom);
+
+    // Upsert dans Supabase
     const { error: upsertError } = await supabase
       .from("domaines_viticoles")
       .upsert(uniquesParNom, { onConflict: ["nom"] });
-
-    app.post(
-      "/api/import-domaines",
-      upload.single("file"),
-      async (req, res) => {
-        try {
-          console.log("Fichier reçu :", req.file);
-
-          const workbook = xlsx.readFile(req.file.path);
-          const sheet = workbook.Sheets[workbook.SheetNames[0]];
-          const domaines = xlsx.utils.sheet_to_json(sheet);
-
-          console.log("Données extraites du fichier :", domaines);
-
-          // Formatage des données
-          const formatted = domaines.map((row) => ({
-            nom: row.nom || null,
-            description: row.description || null,
-            adresse: row.adresse || null,
-            certification: row.certification || null,
-            ville: row.ville || null,
-            lat: row.lat ? parseFloat(row.lat) : null,
-            lon: row.lon ? parseFloat(row.lon) : null,
-            telephone: row.telephone || null,
-            email: row.email || null,
-            appellation: row.appellation || null,
-            commune: row.commune || null,
-            type_vigne: row.type_vigne || null,
-            variete: row.variete || null,
-            nature_vin: row.nature_vin || null,
-          }));
-
-          console.log("Données formatées :", formatted);
-
-          // Filtrer les lignes où tous les champs sont nuls
-          const filteredFormatted = formatted.filter((row) =>
-            Object.values(row).some((value) => value !== null && value !== "")
-          );
-
-          console.log("Données après filtrage :", filteredFormatted);
-
-          const uniquesParNom = Array.from(
-            new Map(filteredFormatted.map((d) => [d.nom, d])).values()
-          );
-
-          // Upsert vers Supabase
-          const { error: upsertError } = await supabase
-            .from("domaines_viticoles")
-            .upsert(uniquesParNom, { onConflict: ["nom"] });
-
-          // Supprimer les domaines absents du fichier importé
-          const nomsDansExcel = uniquesParNom.map((d) => d.nom).filter(Boolean);
-
-          const { data: allDomaines, error: fetchError } = await supabase
-            .from("domaines_viticoles")
-            .select("nom");
-
-          if (fetchError) {
-            console.error(
-              "Erreur lors de la récupération des domaines :",
-              fetchError
-            );
-            throw new Error(fetchError.message);
-          }
-
-          const nomsDansBase = allDomaines.map((d) => d.nom);
-          const nomsASupprimer = nomsDansBase.filter(
-            (nom) => !nomsDansExcel.includes(nom)
-          );
-
-          if (nomsASupprimer.length > 0) {
-            const { error: deleteError } = await supabase
-              .from("domaines_viticoles")
-              .delete()
-              .in("nom", nomsASupprimer);
-
-            if (deleteError) {
-              console.error("Erreur lors de la suppression :", deleteError);
-              throw new Error(deleteError.message);
-            }
-          }
-
-          if (upsertError) {
-            console.error("Erreur lors de l'upsert :", upsertError);
-            throw new Error(upsertError.message);
-          }
-
-          res.json({
-            success: true,
-            imported: uniquesParNom.length,
-          });
-        } catch (err) {
-          console.error("Erreur serveur :", err.message);
-          res
-            .status(500)
-            .json({ error: "Erreur lors de l'import : " + err.message });
-        } finally {
-          try {
-            fs.unlinkSync(req.file.path); // Nettoyage du fichier temporaire
-          } catch (err) {
-            console.warn(
-              "⚠️ Impossible de supprimer le fichier temporaire :",
-              err.message
-            );
-          }
-        }
-      }
-    );
 
     if (upsertError) {
       console.error("Erreur lors de l'upsert :", upsertError);
       throw new Error(upsertError.message);
     }
 
+    // Récupérer tous les noms existants dans Supabase
+    const { data: allDomaines, error: fetchError } = await supabase
+      .from("domaines_viticoles")
+      .select("nom");
+
+    if (fetchError) {
+      console.error("Erreur lors de la récupération :", fetchError);
+      throw new Error(fetchError.message);
+    }
+
+    // Identifier les noms à supprimer
+    const nomsDansFichier = uniquesParNom.map((d) => d.nom);
+    const nomsDansBase = allDomaines.map((d) => d.nom);
+    const nomsASupprimer = nomsDansBase.filter(
+      (nom) => !nomsDansFichier.includes(nom)
+    );
+
+    if (nomsASupprimer.length > 0) {
+      const { error: deleteError } = await supabase
+        .from("domaines_viticoles")
+        .delete()
+        .in("nom", nomsASupprimer);
+
+      if (deleteError) {
+        console.error("Erreur lors de la suppression :", deleteError);
+        throw new Error(deleteError.message);
+      }
+    }
+
     res.json({
       success: true,
       imported: uniquesParNom.length,
+      deleted: nomsASupprimer.length,
     });
   } catch (err) {
     console.error("Erreur serveur :", err.message);
     res.status(500).json({ error: "Erreur lors de l'import : " + err.message });
   } finally {
     try {
-      fs.unlinkSync(req.file.path); // Nettoyage du fichier temporaire
+      fs.unlinkSync(req.file.path); // Suppression fichier temporaire
     } catch (err) {
-      console.warn(
-        "⚠️ Impossible de supprimer le fichier temporaire :",
-        err.message
-      );
+      console.warn("⚠️ Impossible de supprimer le fichier :", err.message);
     }
   }
 });

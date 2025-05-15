@@ -687,7 +687,7 @@ app.post("/api/articles", upload.single("image"), async (req, res) => {
   }
 
   // Chemin d'accès à l'image stockée localement
-  const image_url = `https://render-pfyp.onrender.com/uploads/${file.filename}`;
+  const image_url = `https://render-front-mjmf.onrender.com/uploads/${file.filename}`;
 
   try {
     const { error } = await supabase.from("fil_actualite").insert([
@@ -719,6 +719,6 @@ app.post("/uploads", upload.single("image"), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: "Aucun fichier téléchargé." });
   }
-  const imageUrl = `https://render-pfyp.onrender.com//uploads/${req.file.filename}`;
+  const imageUrl = `https://render-front-mjmf.onrender.com/uploads/${req.file.filename}`;
   res.json({ imageUrl });
 });

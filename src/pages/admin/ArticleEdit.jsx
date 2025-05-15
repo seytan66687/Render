@@ -40,7 +40,7 @@ export default function ArticleEdit() {
       const formData = new FormData();
       formData.append("image", newImage);
 
-      const res = await fetch("https://render-pfyp.onrender.com/upload", {
+      const res = await fetch("https://render-pfyp.onrender.com/uploads", {
         method: "POST",
         body: formData,
       });

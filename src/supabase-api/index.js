@@ -719,6 +719,6 @@ app.post("/upload", upload.single("image"), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: "Aucun fichier téléchargé." });
   }
-  const imageUrl = `https://render-front-6lwn.onrender.com/uploads/${req.file.filename}`;
+  const imageUrl = `https://render-pfyp.onrender.com/uploads/${req.file.filename}`;
   res.json({ imageUrl });
 });

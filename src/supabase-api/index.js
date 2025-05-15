@@ -687,7 +687,7 @@ app.post("/api/articles", upload.single("image"), async (req, res) => {
   }
 
   // Chemin d'accès à l'image stockée localement
-  const image_url = `https://render-front-6lwn.onrender.com/uploads/${file.filename}`;
+  const image_url = `https://render-pfyp.onrender.com/uploads/${file.filename}`;
 
   try {
     const { error } = await supabase.from("fil_actualite").insert([

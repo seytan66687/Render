@@ -715,7 +715,7 @@ app.post("/api/articles", upload.single("image"), async (req, res) => {
 app.use("/uploads", express.static(uploadsDir));
 
 // 📌 Route pour upload avec vérification de req.file
-app.post("/uploads", upload.single("image"), (req, res) => {
+app.post("/upload", upload.single("image"), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: "Aucun fichier téléchargé." });
   }

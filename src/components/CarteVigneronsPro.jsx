@@ -28,13 +28,16 @@ export default function CarteVigneronsPro() {
   useEffect(() => {
     const fetchDomaines = async () => {
       try {
-        const res = await fetch("http://localhost:3001/api/domaines", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_API_SECRET}`,
-          },
-        });
+        const res = await fetch(
+          "https://render-pfyp.onrender.com/api/domaines",
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${import.meta.env.VITE_API_SECRET}`,
+            },
+          }
+        );
 
         if (!res.ok) throw new Error(`Erreur ${res.status}`);
 

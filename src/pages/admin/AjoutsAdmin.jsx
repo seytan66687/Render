@@ -36,6 +36,7 @@ export default function AjoutsAdmin() {
         const res = await fetch("https://render-pfyp.onrender.com/api/users", {
           headers: {
             Authorization: `Bearer ${token}`,
+            "x-api-secret": import.meta.env.VITE_API_SECRET,
           },
         });
 
@@ -63,7 +64,10 @@ export default function AjoutsAdmin() {
         "https://render-pfyp.onrender.com/api/create-user",
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-secret": import.meta.env.VITE_API_SECRET,
+          },
           body: JSON.stringify({ email, password, role, username }),
         }
       );
@@ -92,6 +96,9 @@ export default function AjoutsAdmin() {
         `https://render-pfyp.onrender.com/api/users/${id}`,
         {
           method: "DELETE",
+          headers: {
+            "x-api-secret": import.meta.env.VITE_API_SECRET,
+          },
         }
       );
       const result = await res.json();
@@ -112,7 +119,10 @@ export default function AjoutsAdmin() {
         `https://render-pfyp.onrender.com/api/users/${editingUser.id}`,
         {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-secret": import.meta.env.VITE_API_SECRET,
+          },
           body: JSON.stringify({
             username: editingUser.username,
             email: editingUser.email,

@@ -11,26 +11,57 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+const checkUserAndAdmin = async (req, res, next) => {
+  const token = req.headers.authorization?.split(" ")[1];
+
+  if (!token) return res.status(401).json({ error: "accès refusé" });
+
+  const { data: userInfo, error: userError } = await supabase.auth.getUser(
+    token
+  );
+  if (userError || !userInfo?.user?.id) {
+    return res.status(401).json({ error: "Token invalide" });
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", userInfo.user.id)
+    .single();
+
+  if (profileError) {
+    return res
+      .status(500)
+      .json({ error: "Erreur lors de la vérification du rôle" });
+  }
+
+  if (profile.role !== "admin") {
+    return res.status(403).json({ error: "Accès interdit" });
+  }
+
+  req.user = userInfo.user;
+  next();
+};
+
+module.exports = { checkUserAndAdmin };
+
 const checkAuth = (req, res, next) => {
   console.log("Auth header reçu :", req.headers.authorization);
 
+  // Ajoute ce log pour mieux diagnostiquer
+  if (!req.headers.authorization) {
+    console.warn("⚠️ Aucun header Authorization reçu !");
+  }
+
   if (
     !req.headers.authorization ||
-    req.headers.authorization !== `Bearer ${process.env.VITE_API_SECRET}`
+    req.headers.authorization !== `Bearer ${process.env.API_SECRET}`
   ) {
     return res.status(403).json({ error: "Accès refusé" });
   }
 
   next();
 };
-
-const corsOptions = {
-  origin: "https://render-front-6lwn.onrender.com", // ou l'URL de ton frontend en prod
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"], // <- autoriser Authorization !
-};
-
-app.use(cors(corsOptions));
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -248,7 +279,7 @@ app.post("/api/import-users", checkAuth, async (req, res) => {
   }
 });
 
-app.get("/api/users", checkAuth, async (req, res) => {
+app.get("/api/users", checkUserAndAdmin, async (req, res) => {
   const accessToken = req.headers.authorization?.split(" ")[1];
 
   if (!accessToken) {
@@ -297,7 +328,7 @@ app.get("/api/users", checkAuth, async (req, res) => {
 
 // suppr un user
 
-app.delete("/api/users/:id", checkAuth, async (req, res) => {
+app.delete("/api/users/:id", checkUserAndAdmin, async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -323,7 +354,7 @@ app.delete("/api/users/:id", checkAuth, async (req, res) => {
 // modif un user
 
 // MODIFIE UN UTILISATEUR
-app.put("/api/users/:id", checkAuth, async (req, res) => {
+app.put("/api/users/:id", async (req, res) => {
   const { id } = req.params;
   const { username, email, password } = req.body;
 
@@ -347,7 +378,7 @@ app.put("/api/users/:id", checkAuth, async (req, res) => {
   res.json({ success: true });
 });
 
-app.get("/api/users/:id", checkAuth, async (req, res) => {
+app.get("/api/users/:id", checkUserAndAdmin, async (req, res) => {
   const { id } = req.params;
   console.log("🔍 ID reçu:", id);
 
@@ -367,43 +398,38 @@ app.get("/api/users/:id", checkAuth, async (req, res) => {
 
 // ajouter des doc tech
 
-app.post(
-  "/api/add-document",
-  checkAuth,
-  upload.single("file"),
-  async (req, res) => {
-    const { titre, description, date_publication } = req.body;
-    const file = req.file;
+app.post("/api/add-document", upload.single("file"), async (req, res) => {
+  const { titre, description, date_publication } = req.body;
+  const file = req.file;
 
-    if (!titre || !date_publication || !file) {
-      return res.status(400).json({ error: "Champs requis manquants." });
-    }
-
-    // 🔗 Lien local vers le fichier
-    const file_url = `https://render-pfyp.onrender.com/uploads/${file.filename}`;
-
-    try {
-      const { error } = await supabase.from("documents").insert([
-        {
-          titre,
-          description,
-          date_publication,
-          file_url, // ✅ On garde le nom correct de la colonne
-        },
-      ]);
-
-      if (error) {
-        console.error("❌ Erreur insert document :", error.message);
-        return res.status(500).json({ error: error.message });
-      }
-
-      res.json({ success: true });
-    } catch (err) {
-      console.error("❌ Erreur serveur API /api/add-document :", err.message);
-      res.status(500).json({ error: err.message });
-    }
+  if (!titre || !date_publication || !file) {
+    return res.status(400).json({ error: "Champs requis manquants." });
   }
-);
+
+  // 🔗 Lien local vers le fichier
+  const file_url = `https://render-pfyp.onrender.com/uploads/${file.filename}`;
+
+  try {
+    const { error } = await supabase.from("documents").insert([
+      {
+        titre,
+        description,
+        date_publication,
+        file_url, // ✅ On garde le nom correct de la colonne
+      },
+    ]);
+
+    if (error) {
+      console.error("❌ Erreur insert document :", error.message);
+      return res.status(500).json({ error: error.message });
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("❌ Erreur serveur API /api/add-document :", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 app.get("/api/documents", checkAuth, async (req, res) => {
   try {
@@ -424,7 +450,7 @@ app.get("/api/documents", checkAuth, async (req, res) => {
   }
 });
 
-app.get("/download/:filename", checkAuth, (req, res) => {
+app.get("/download/:filename", (req, res) => {
   const filename = req.params.filename;
   const filePath = path.join(__dirname, "uploads", filename);
 
@@ -682,43 +708,38 @@ app.delete("/api/documents/:id", async (req, res) => {
 });
 
 // 📌 Ajouter une actualité avec image
-app.post(
-  "/api/articles",
-  checkAuth,
-  upload.single("image"),
-  async (req, res) => {
-    const { titre, description, contenu } = req.body;
-    const file = req.file;
+app.post("/api/articles", upload.single("image"), async (req, res) => {
+  const { titre, description, contenu } = req.body;
+  const file = req.file;
 
-    if (!titre || !description || !contenu || !file) {
-      return res.status(400).json({ error: "Tous les champs sont requis." });
-    }
-
-    // Chemin d'accès à l'image stockée localement
-    const image_url = `https://render-pfyp.onrender.com/uploads/${file.filename}`;
-
-    try {
-      const { error } = await supabase.from("fil_actualite").insert([
-        {
-          titre,
-          description,
-          contenu,
-          image_url,
-        },
-      ]);
-
-      if (error) {
-        console.error("❌ Erreur insertion actualité :", error.message);
-        return res.status(500).json({ error: error.message });
-      }
-
-      res.json({ success: true });
-    } catch (err) {
-      console.error("❌ Erreur serveur /api/articles :", err.message);
-      res.status(500).json({ error: err.message });
-    }
+  if (!titre || !description || !contenu || !file) {
+    return res.status(400).json({ error: "Tous les champs sont requis." });
   }
-);
+
+  // Chemin d'accès à l'image stockée localement
+  const image_url = `https://render-pfyp.onrender.com/uploads/${file.filename}`;
+
+  try {
+    const { error } = await supabase.from("fil_actualite").insert([
+      {
+        titre,
+        description,
+        contenu,
+        image_url,
+      },
+    ]);
+
+    if (error) {
+      console.error("❌ Erreur insertion actualité :", error.message);
+      return res.status(500).json({ error: error.message });
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("❌ Erreur serveur /api/articles :", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 app.post("/upload", checkAuth, upload.single("image"), (req, res) => {
   const imageUrl = `https://render-pfyp.onrender.com/uploads/${req.file.filename}`;

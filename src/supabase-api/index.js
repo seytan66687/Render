@@ -79,7 +79,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // ✅ Créer un utilisateur unique
-app.post("/api/create-user", checkAuth, async (req, res) => {
+app.post("/api/create-user", async (req, res) => {
   const { email, password, role, username } = req.body;
 
   console.log("📥 Données reçues :", { email, password, role, username });
@@ -399,10 +399,10 @@ app.get("/api/users/:id", checkUserAndAdmin, async (req, res) => {
 // ajouter des doc tech
 
 app.post("/api/add-document", upload.single("file"), async (req, res) => {
-  const { titre, description, date_publication } = req.body;
+  const { titre, description, date_publication, categorie } = req.body; // <-- utilise categorie
   const file = req.file;
 
-  if (!titre || !date_publication || !file) {
+  if (!titre || !date_publication || !file || !categorie) {
     return res.status(400).json({ error: "Champs requis manquants." });
   }
 
@@ -415,7 +415,8 @@ app.post("/api/add-document", upload.single("file"), async (req, res) => {
         titre,
         description,
         date_publication,
-        file_url, // ✅ On garde le nom correct de la colonne
+        file_url,
+        categorie, // <-- insère la catégorie librement saisie
       },
     ]);
 
@@ -744,6 +745,31 @@ app.post("/api/articles", upload.single("image"), async (req, res) => {
 app.post("/upload", checkAuth, upload.single("image"), (req, res) => {
   const imageUrl = `https://render-pfyp.onrender.com/uploads/${req.file.filename}`;
   res.json({ imageUrl });
+});
+
+app.get("/api/categories", async (req, res) => {
+  try {
+    // Récupère toutes les catégories distinctes de la colonne "categorie" de la table "documents"
+    const { data, error } = await supabase
+      .from("documents")
+      .select("categorie")
+      .neq("categorie", null);
+
+    if (error) throw error;
+
+    // Filtre les catégories uniques et non vides
+    const uniqueCats = Array.from(
+      new Set((data || []).map((d) => d.categorie).filter(Boolean))
+    ).map((cat) => ({
+      id: cat,
+      nom: cat,
+    }));
+
+    res.json(uniqueCats);
+  } catch (err) {
+    console.error("Erreur récupération catégories :", err.message);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // 🚀 Lancer le serveur

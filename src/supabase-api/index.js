@@ -248,7 +248,7 @@ app.post("/api/import-users", checkAuth, async (req, res) => {
   }
 });
 
-app.get("/api/users", checkAuth, async (req, res) => {
+app.get("/api/users", async (req, res) => {
   const accessToken = req.headers.authorization?.split(" ")[1];
 
   if (!accessToken) {
@@ -297,7 +297,7 @@ app.get("/api/users", checkAuth, async (req, res) => {
 
 // suppr un user
 
-app.delete("/api/users/:id", checkAuth, async (req, res) => {
+app.delete("/api/users/:id", async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -323,7 +323,7 @@ app.delete("/api/users/:id", checkAuth, async (req, res) => {
 // modif un user
 
 // MODIFIE UN UTILISATEUR
-app.put("/api/users/:id", checkAuth, async (req, res) => {
+app.put("/api/users/:id", async (req, res) => {
   const { id } = req.params;
   const { username, email, password } = req.body;
 
@@ -347,7 +347,7 @@ app.put("/api/users/:id", checkAuth, async (req, res) => {
   res.json({ success: true });
 });
 
-app.get("/api/users/:id", checkAuth, async (req, res) => {
+app.get("/api/users/:id", async (req, res) => {
   const { id } = req.params;
   console.log("🔍 ID reçu:", id);
 

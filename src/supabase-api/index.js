@@ -11,6 +11,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+const supabase1 = createClient(
+  "https://vvsagimqstdsgpxqhmyo.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ2c2FnaW1xc3Rkc2dweHFobXlvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDAyMjcwNCwiZXhwIjoyMDU5NTk4NzA0fQ.2SOGnY4QcWNfXPjRKxHEVd3PAcooe3VdFG7zMkBVVkc" // ⚠️ Utilise la clé de service côté serveur (plus de droits)
+);
+
 const checkUserAndAdmin = async (req, res, next) => {
   const token = req.headers.authorization?.split(" ")[1];
 
@@ -69,7 +74,7 @@ const supabase = createClient(
 );
 
 // 📁 Servir les fichiers localement
-app.use("/uploads", checkAuth, express.static(path.join(__dirname, "uploads")));
+// app.use("/uploads", checkAuth, express.static(path.join(__dirname, "uploads")));
 
 // 📤 Config upload local
 const storage = multer.diskStorage({
@@ -177,7 +182,7 @@ app.post("/api/sync-vignerons", checkAuth, async (req, res) => {
 });
 
 // 🧩 Import de masse + synchronisation
-app.post("/api/import-users", checkAuth, async (req, res) => {
+app.post("/api/import-users", async (req, res) => {
   const { users, emailsToKeep } = req.body;
 
   if (!Array.isArray(users) || !Array.isArray(emailsToKeep)) {
@@ -399,15 +404,33 @@ app.get("/api/users/:id", checkUserAndAdmin, async (req, res) => {
 // ajouter des doc tech
 
 app.post("/api/add-document", upload.single("file"), async (req, res) => {
-  const { titre, description, date_publication, categorie } = req.body; // <-- utilise categorie
+  // Utilise req.body pour les champs texte et req.file pour le fichier
+  const { titre, description, date_publication, categorie } = req.body;
   const file = req.file;
 
-  if (!titre || !date_publication || !file || !categorie) {
+  if (!titre || !date_publication || !categorie || !file) {
     return res.status(400).json({ error: "Champs requis manquants." });
   }
 
-  // 🔗 Lien local vers le fichier
-  const file_url = `https://render-pfyp.onrender.com/uploads/${file.filename}`;
+  // Stocke le fichier localement dans /uploads et construit l'URL locale
+  const uploadsDir = path.join(__dirname, "uploads");
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir);
+  }
+  const localFileName = `${Date.now()}-${file.originalname}`;
+  const localFilePath = path.join(uploadsDir, localFileName);
+
+  try {
+    // Déplace le fichier temporaire vers le dossier uploads
+    fs.renameSync(file.path, localFilePath);
+  } catch (err) {
+    return res.status(500).json({
+      error: "Erreur lors de la sauvegarde locale du fichier : " + err.message,
+    });
+  }
+
+  // URL locale pour accéder au fichier (à servir via Express si besoin)
+  const fileUrl = `/uploads/${localFileName}`;
 
   try {
     const { error } = await supabase.from("documents").insert([
@@ -415,8 +438,8 @@ app.post("/api/add-document", upload.single("file"), async (req, res) => {
         titre,
         description,
         date_publication,
-        file_url,
-        categorie, // <-- insère la catégorie librement saisie
+        file_url: fileUrl,
+        categorie,
       },
     ]);
 
@@ -425,7 +448,7 @@ app.post("/api/add-document", upload.single("file"), async (req, res) => {
       return res.status(500).json({ error: error.message });
     }
 
-    res.json({ success: true });
+    res.json({ success: true, file_url: fileUrl });
   } catch (err) {
     console.error("❌ Erreur serveur API /api/add-document :", err.message);
     res.status(500).json({ error: err.message });
@@ -708,45 +731,116 @@ app.delete("/api/documents/:id", async (req, res) => {
   res.json({ success: true });
 });
 
-// 📌 Ajouter une actualité avec image
+// uploads
+
+// Supprime la route locale (inutile avec Supabase Storage)
+// app.use("/uploads", checkAuth, express.static(path.join(__dirname, "uploads")));
+
+// 🔧 ROUTE POUR L'UPLOAD VERS SUPABASE
+app.post("/api/upload", upload.single("file"), async (req, res) => {
+  const file = req.file;
+
+  if (!file) {
+    return res.status(400).json({ error: "Aucun fichier envoyé." });
+  }
+
+  // Lis le fichier temporaire créé par multer
+  let fileBuffer;
+  try {
+    fileBuffer = fs.readFileSync(file.path);
+  } catch (err) {
+    return res
+      .status(500)
+      .json({ error: "Erreur lecture fichier temporaire." });
+  }
+
+  const fileName = `${Date.now()}-${file.originalname}`;
+
+  try {
+    const { error: uploadError } = await supabase.storage
+      .from("uploads")
+      .upload(fileName, fileBuffer, {
+        contentType: file.mimetype,
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.error("Erreur Supabase upload :", uploadError.message);
+      return res.status(500).json({ error: uploadError.message });
+    }
+
+    const { publicUrl } = supabase.storage
+      .from("uploads")
+      .getPublicUrl(fileName).data;
+
+    // Nettoyage du fichier temporaire local après upload
+    try {
+      fs.unlinkSync(file.path);
+    } catch (err) {
+      // ignore
+    }
+
+    res.json({ url: publicUrl });
+  } catch (err) {
+    console.error("Erreur serveur :", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// articles
+
 app.post("/api/articles", upload.single("image"), async (req, res) => {
   const { titre, description, contenu } = req.body;
   const file = req.file;
 
   if (!titre || !description || !contenu || !file) {
-    return res.status(400).json({ error: "Tous les champs sont requis." });
+    return res.status(400).json({ error: "Champs manquants" });
   }
 
-  // Chemin d'accès à l'image stockée localement
-  const image_url = `https://render-pfyp.onrender.com/uploads/${file.filename}`;
+  const fileName = `${Date.now()}-${file.originalname}`;
 
   try {
-    const { error } = await supabase.from("fil_actualite").insert([
+    // 📤 Upload dans Supabase Storage
+    const { error: uploadError } = await supabase.storage
+      .from("uploads")
+      .upload(fileName, file.buffer, {
+        contentType: file.mimetype,
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.error("❌ Erreur upload image :", uploadError.message);
+      return res.status(500).json({ error: "Erreur upload image Supabase." });
+    }
+
+    // 🌐 Récupération de l’URL publique de l’image
+    const { publicUrl } = supabase.storage
+      .from("uploads")
+      .getPublicUrl(fileName).data;
+
+    // 🗃️ Insertion de l’article dans la base de données
+    const { error: dbError } = await supabase.from("fil_actualite").insert([
       {
         titre,
         description,
         contenu,
-        image_url,
+        image_url: publicUrl, // ⚠️ Assure-toi que la colonne s’appelle bien "image_url"
       },
     ]);
 
-    if (error) {
-      console.error("❌ Erreur insertion actualité :", error.message);
-      return res.status(500).json({ error: error.message });
+    if (dbError) {
+      console.error("❌ Erreur insertion actualité :", dbError.message);
+      return res.status(500).json({ error: dbError.message });
     }
 
-    res.json({ success: true });
+    res.json({ success: true, image_url: publicUrl });
   } catch (err) {
-    console.error("❌ Erreur serveur /api/articles :", err.message);
+    console.error("❌ Erreur serveur :", err.message);
     res.status(500).json({ error: err.message });
   }
 });
 
-app.post("/upload", checkAuth, upload.single("image"), (req, res) => {
-  const imageUrl = `https://render-pfyp.onrender.com/uploads/${req.file.filename}`;
-  res.json({ imageUrl });
-});
-
+// Ajoute la route pour récupérer les catégories distinctes des documents
 app.get("/api/categories", async (req, res) => {
   try {
     // Récupère toutes les catégories distinctes de la colonne "categorie" de la table "documents"
@@ -774,5 +868,5 @@ app.get("/api/categories", async (req, res) => {
 
 // 🚀 Lancer le serveur
 app.listen(3001, () => {
-  console.log("🚀 API démarrée sur https://render-pfyp.onrender.com");
+  console.log("🚀 API démarrée sur https://render-pfyp.onrender.com/");
 });

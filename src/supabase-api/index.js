@@ -401,10 +401,13 @@ app.get("/api/users/:id", checkUserAndAdmin, async (req, res) => {
   res.json(data);
 });
 
-// ajouter des doc tech
+// Supprime l'ancienne route locale d'ajout de document
+// app.post("/api/add-document", upload.single("file"), async (req, res) => {
+//   ...ancienne logique locale...
+// });
 
-app.post("/api/add-document", upload.single("file"), async (req, res) => {
-  // Utilise req.body pour les champs texte et req.file pour le fichier
+// Nouvelle route pour créer un document avec upload dans Supabase Storage (bucket "documents")
+app.post("/api/upload-document", upload.single("file"), async (req, res) => {
   const { titre, description, date_publication, categorie } = req.body;
   const file = req.file;
 
@@ -412,45 +415,63 @@ app.post("/api/add-document", upload.single("file"), async (req, res) => {
     return res.status(400).json({ error: "Champs requis manquants." });
   }
 
-  // Stocke le fichier localement dans /uploads et construit l'URL locale
-  const uploadsDir = path.join(__dirname, "uploads");
-  if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir);
-  }
-  const localFileName = file.originalname; // <-- supprime les chiffres devant
-  const localFilePath = path.join(uploadsDir, localFileName);
-
+  // Lis le fichier temporaire créé par multer
+  let fileBuffer;
   try {
-    // Déplace le fichier temporaire vers le dossier uploads (remplace si existe)
-    fs.renameSync(file.path, localFilePath);
+    fileBuffer = fs.readFileSync(file.path);
   } catch (err) {
-    return res.status(500).json({
-      error: "Erreur lors de la sauvegarde locale du fichier : " + err.message,
-    });
+    return res
+      .status(500)
+      .json({ error: "Erreur lecture fichier temporaire." });
   }
 
-  // URL locale pour accéder au fichier (à servir via Express si besoin)
-  const fileUrl = `/uploads/${localFileName}`;
+  const fileName = `${Date.now()}-${file.originalname}`;
 
   try {
-    const { error } = await supabase.from("documents").insert([
+    // Upload dans Supabase Storage (bucket "documents")
+    const { error: uploadError } = await supabase.storage
+      .from("documents")
+      .upload(fileName, fileBuffer, {
+        contentType: file.mimetype,
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.error("Erreur Supabase upload :", uploadError.message);
+      return res.status(500).json({ error: uploadError.message });
+    }
+
+    // Récupère l'URL publique du fichier
+    const { publicUrl } = supabase.storage
+      .from("documents")
+      .getPublicUrl(fileName).data;
+
+    // Nettoyage du fichier temporaire local après upload
+    try {
+      fs.unlinkSync(file.path);
+    } catch (err) {
+      // ignore
+    }
+
+    // Ajoute le document dans la table "documents"
+    const { error: dbError } = await supabase.from("documents").insert([
       {
         titre,
         description,
         date_publication,
-        file_url: fileUrl,
+        file_url: publicUrl,
         categorie,
       },
     ]);
 
-    if (error) {
-      console.error("❌ Erreur insert document :", error.message);
-      return res.status(500).json({ error: error.message });
+    if (dbError) {
+      console.error("❌ Erreur insert document :", dbError.message);
+      return res.status(500).json({ error: dbError.message });
     }
 
-    res.json({ success: true, file_url: fileUrl });
+    res.json({ success: true, file_url: publicUrl });
   } catch (err) {
-    console.error("❌ Erreur serveur API /api/add-document :", err.message);
+    console.error("❌ Erreur serveur API /api/upload-document :", err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -868,5 +889,5 @@ app.get("/api/categories", async (req, res) => {
 
 // 🚀 Lancer le serveur
 app.listen(3001, () => {
-  console.log("🚀 API démarrée sur https://render-pfyp.onrender.com/");
+  console.log("🚀 API démarrée sur http://localhost:3001");
 });

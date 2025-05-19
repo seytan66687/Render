@@ -79,7 +79,7 @@ const supabase = createClient(
 // 📤 Config upload local
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, "uploads"),
-  filename: (req, file, cb) => cb(null, `${Date.now()}_${file.originalname}`),
+  filename: (req, file, cb) => cb(null, file.originalname), // <-- supprime les chiffres devant
 });
 const upload = multer({ storage });
 
@@ -417,11 +417,11 @@ app.post("/api/add-document", upload.single("file"), async (req, res) => {
   if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir);
   }
-  const localFileName = `${Date.now()}-${file.originalname}`;
+  const localFileName = file.originalname; // <-- supprime les chiffres devant
   const localFilePath = path.join(uploadsDir, localFileName);
 
   try {
-    // Déplace le fichier temporaire vers le dossier uploads
+    // Déplace le fichier temporaire vers le dossier uploads (remplace si existe)
     fs.renameSync(file.path, localFilePath);
   } catch (err) {
     return res.status(500).json({

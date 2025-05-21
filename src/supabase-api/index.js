@@ -722,14 +722,70 @@ app.get("/api/documents/:id", async (req, res) => {
   res.json(data);
 });
 
-// PUT pour modifier un document (ajout du type)
-app.put("/api/documents/:id", async (req, res) => {
+// PUT pour modifier un document (fichier, catégorie, lien, etc.)
+app.put("/api/documents/:id", upload.single("file"), async (req, res) => {
   const { id } = req.params;
-  const { titre, description, date_publication, type } = req.body;
+  let { titre, description, date_publication, categorie, file_url } = req.body;
+  let newFileUrl = file_url;
+
+  // Si un fichier est envoyé, on l'upload dans Supabase Storage et on remplace l'ancien lien
+  if (req.file) {
+    try {
+      const fileBuffer = fs.readFileSync(req.file.path);
+      const fileName = `${Date.now()}-${req.file.originalname}`;
+      const { error: uploadError } = await supabase.storage
+        .from("documents")
+        .upload(fileName, fileBuffer, {
+          contentType: req.file.mimetype,
+          upsert: true,
+        });
+
+      if (uploadError) {
+        console.error("Erreur Supabase upload :", uploadError.message);
+        return res.status(500).json({ error: uploadError.message });
+      }
+
+      const { publicUrl } = supabase.storage
+        .from("documents")
+        .getPublicUrl(fileName).data;
+
+      newFileUrl = publicUrl;
+
+      // Nettoyage du fichier temporaire local après upload
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (err) {
+        // ignore
+      }
+    } catch (err) {
+      return res
+        .status(500)
+        .json({ error: "Erreur upload fichier : " + err.message });
+    }
+  }
+
+  // Si file_url est un lien externe (inputType "link"), il sera déjà dans req.body.file_url
+  // Si file_url est vide et pas de fichier, on ne modifie pas le champ
+
+  // Prépare l'objet de mise à jour
+  const updateObj = {
+    titre,
+    description,
+    date_publication,
+    categorie,
+  };
+  if (newFileUrl) updateObj.file_url = newFileUrl;
+
+  // Retire les champs vides pour éviter d'écraser par null
+  Object.keys(updateObj).forEach(
+    (key) =>
+      (updateObj[key] === undefined || updateObj[key] === "") &&
+      delete updateObj[key]
+  );
 
   const { error } = await supabase
     .from("documents")
-    .update({ titre, description, date_publication, type })
+    .update(updateObj)
     .eq("id", id);
 
   if (error) {
@@ -889,5 +945,5 @@ app.get("/api/categories", async (req, res) => {
 
 // 🚀 Lancer le serveur
 app.listen(3001, () => {
-  console.log("🚀 API démarrée sur http://localhost:3001");
+  console.log("🚀 API démarrée sur https://render-pfyp.onrender.com/");
 });

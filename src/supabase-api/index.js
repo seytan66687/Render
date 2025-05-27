@@ -535,6 +535,7 @@ app.post("/api/import-domaines", upload.single("file"), async (req, res) => {
           type_vigne: row.type_vigne || null,
           variete: row.variete || null,
           nature_vin: row.nature_vin || null,
+          competence: row.competence || null, // <-- ajout du champ compétence
         };
       })
       .filter((row) =>
